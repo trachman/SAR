@@ -1,0 +1,129 @@
+Pulse Compression of Linear FM Signals
+
+FM = Frequency Modulation
+
+
+3.1 Introduction
+
+
+- Pulse compression is a type of spread spectrum method, designed to minimize peak power, maximize signal-to-noise ratio, and obtain fine resolution of the sensed object
+- Linear FM Signals are very popular in SAR, and occur when the signals instantaneous frequency is a linear function of time
+- Linear FM Signals are used in the transmitted signal to achieve a uniformly filled bandwidth, and they arrive in the received signal from sensor motion
+
+
+3.2 Linear FM Signals 
+
+
+3.2.1 Time Domain Representation
+
+- An ideal linear FM signal (or pulse) has a time duration T in seconds with a constant amplitude, a center frequency in Hz, and a characteristic phase component
+- For linear frequency modulation, the phase is a quadratic function of time
+- The frequency slope is the Linear FM Rate
+- When the Linear FM Rate is:
+    Positive = Up Chirp
+    Negative = Down Chirp
+
+3.2.2 Spectral Representation
+
+Envelope - The smooth curve that describes a signal's instantaneous amplitude. The slowly varying outline that wraps around the rapid oscillations.
+           For a typical amplitude modulated waveform, the envelope is the actual modulated signal you care about.
+
+- The real and imaginary parts of the spectral domain have a 'similar' Linear FM structure as the real and imaginary parts of the time domain
+- The envelope and phase are also approximately equal in both the time and frequency domains
+
+3.2.3 Sampling of FM Signals
+
+- Nyquist Theorem states that the sampling rate must be greater than the bandwidth of the signal
+- For a complex Linear FM Signal at Baseband (centered at 0Hz), the highest frequency f_max = (abs(K) * T) / 2
+  Where:
+    K = Linear FM Rate (slope of the Linear FM)
+    T = Duration in seconds
+    We are centered at 0 so the maximum must be divided by 2
+- Thus, the f_max is half of the bandwidth
+- If we take a sample at twice the frequency of the fastest frequency, we guarantee at least two samples of each wave
+- This makes sense. Think of taking a series of photos of a fan moving really fast and increasing in speed over time.
+                    If you don't take a photo of a fan faster than it takes the fastest speed of the fan to complete a full rotatation, you will get incomplete information.
+                    A blurred image. If you take at least 2 samples of everything for each wave, you guarantee no 'aliasing' or loss of information.
+
+
+3.3 Pulse Compression
+
+
+- This section has been covered in great deal by the python code associated with Chapter 3.
+- We go over Pulse Compression in detail and model why a Linear FM chirp increases our target resolution
+
+3.3.2 Time Domain Compression of Linear FM Signals
+
+- Compression Ratio           = Uncompressed Pulse Width / Compressed Pulse Width 
+- Signal To Noise Ratio (SNR) = Signal Energy / Noise Power Spectral Density
+- Signal Energy               = Power * Time
+
+- In Pulse Compression, we increase SNR by increasing Signal Energy by increasing the length of "Time" we send the signal with a Linear Chirp
+- Modulating the frequency Linearly allows us to convolve the received signal with the time reveresed conjugate of the known chirp obtaining and output that is compressed
+  in time compared to the original chirp
+- A compression ratio of the order of 100s to 1000s may be achieved with a Linear FM Pulse
+- Pulse Resolution is defined as the spread between the two -3-db points of the compressed signal
+- Pulse Resolution = 0.886 / abs(K) * T; where K is the Linear FM Rate and T is the duration
+- Since abs(K) * T is equal to the Bandwidth, the resolution is the reciprocal of the bandwidth. A wider bandwidth gives a higher resolution.
+- The Pulse Resolution is also called the Impulse Response Width (IRW)
+- The best part of Pulse Compression is how resistant it is to Random Noise!
+
+Definitions:
+Baseband     - The signals spectrum is centered around 0Hz (Mathematically easier to deal with)
+Non Baseband - The signals spectrum is not centered around 0Hz
+
+Note:
+I am seeing a lot of the use of the mathematical function rect() multiplied by a exp() function.
+All this is doing is 'windowing' the exp() wave. Ie.
+Within a certain time window mulitiply exp() function by 1 to keep the result.
+Outside a certain time window multiply exp() function by 0 to get rid of the result.
+
+3.3.3 Frequency Domain Matched Filter
+
+- The Time Domain Matched Filter above can be applied with a Time Domian Convolution, HOWEVER, it can also be applied with a Frequency Domain Fast Convolution
+- Both yield the same results
+- In addition to being applied, the Matched Filter can also be directly designed in the Frequency Domain, with little loss of accuracy and it's often convenient to do so
+- This section was very similar to the above section mathematically, biggest takeaway is Matched Filtering can be done in both domains
+
+3.3.4 The Effect of Windows
+
+- After Pulse Compression, we get a nice spike from our target in our output, HOWEVER, these spikes have "Side Lobes"
+- It can get confusing when the PSLR (Peak Side Lobe Ratio) isn't low enough because you may confuse targets for side lobes
+- PSLR    = Amplitude of Largest Side Lobe / Amplitude of Main Lobe Peak 
+- PSLR_db = 20 * log_10(Amplitude of Largest Side Lobe / Amplitude of Main Lobe Peak)
+- When the envolope/window is approximately rectangular (same magnitude throughout the chirp) the PSLR is approximately -13.3 db
+- An example of a rectangular window is in Chapter3_Code.py where our Transmitted Chirp only consists of a constant frequency
+- One way to reduce the PSLR is to apply a smoothing window to the matched filter in the Frequency Domain which reduces the leakage of energy from the main lobe
+  to the side lobes
+- A window is a symmetrical real function which applies weights to the signal spectrum
+- The weight is maximum in the middle (the peak) of the signal spectrum and tapers off toward the edges of the spectrum
+- The window has the effect of 'smoothing' the spectrum, at the expense of degraded resolution, as it reduces the effective signal badnwidth used in compression
+- Examples of Windows
+--- Taylor
+--- Chebyshev
+--- Hanning
+--- Hamming
+--- Kaiser
+
+- We focus on Kaiser for the following reasons
+1. Nearly optimal for creating a compressed pulse with the largest energy in the main lobe for a given ISLR
+2. Has an adjustable parameter B which allows tradeoff between resolution and sidelobe levels to suit different applications
+
+- Because of the one-to-one relationship between Time and Frequency for Linear FM signals, the window can also be applied in the Time Domain
+- The matched filter can also be designed in the time domain without windowing, and application of the window can be deferred until data is processed in the Frequency Domain
+- Similar to before, the Impulse Response of the Compressed Signal is then given by a sinc-like function centered at t_0 with a broader main lobe and lower side lobes
+- This IRW broadening factor of the main lobe is stored in a variable and the updated Pulse Resolution Equation becomes ...
+- Pulse Resolution = (0.886 * b) / (abs(K) * T)
+- In specifying system performance, restrictions are placed on both IRW and PSLR, therefore a tradeoff has to be performed when selecting paramters of a window
+
+
+3.3.5 Oversampling Ratio Revisited
+
+- Oversampling Ratio = Sampling Rate / Signal Bandwidth
+- It can also be defined as the Ratio of Resolution to the Sample Spacing
+- Nyquist Rate specifies sample twice as fast as your fastest frequency component in your bandwidth
+- Often times its good to sample more than this!
+
+
+3.4 Matched Filter Implementation
+
