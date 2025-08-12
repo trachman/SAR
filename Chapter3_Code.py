@@ -21,10 +21,6 @@ f1 = 1000 # End frequency (Hz)
 t = np.arange(0, T, 1 / Fs)
 tx = chirp(t, f0=f0, f1=f1, t1=T, method='linear')
 
-# Adding windowing to improve the PSLR and make target detection easier (at the cost of some resolution (broader main lobe))
-window = np.kaiser(len(tx), 2.5)
-tx = tx * window
-
 # Received signal: Delayed + Noise
 delay = 300  # samples delay
 # rx = np.zeros(len(t) + delay)
@@ -48,7 +44,10 @@ for i in range(second_target_delay, second_target_delay + len(tx)):
 rx += 0.5 * np.random.randn(len(rx))
 
 # Matched filter: Time-Reverse & Conjugate
-mf = np.conj(tx[::-1])
+# Adding windowing to improve the PSLR and make target detection easier (at the cost of some resolution (broader main lobe))
+window = np.kaiser(len(tx), 2.5)
+tx_with_windowing = tx * window
+mf = np.conj(tx_with_windowing[::-1])
 y = fftconvolve(rx, mf, mode='same') # Equivalent to np.convolve, just using a different algorithm and exploiting convolution properties in frequency domain
 # y = np.convolve(rx, mf, mode='same')
 
@@ -87,7 +86,7 @@ plt.figure(figsize=(10,7))
 
 plt.subplot(3,1,1)
 plt.plot(t, tx)
-plt.title("Transmit Chirp Signal")
+plt.title("Transmitted Chirp Signal (No Windowing)")
 plt.ylabel("Amplitude")
 
 plt.subplot(3,1,2)

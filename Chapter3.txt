@@ -127,3 +127,31 @@ Outside a certain time window multiply exp() function by 0 to get rid of the res
 
 3.4 Matched Filter Implementation
 
+- The Matched Filter can be applied in the time domain using a linear convolution, HOWEVER, the Matched Filter is usually very long in SAR applications
+- Thus, the Matched Filter is normally applied in the Frequency Domain
+- Three options for generating a Frequency Domain Matched Filter
+
+1. Take the DFT of the zero padded, complex conjugate of the Time Reversed Pulse Replica (copy of the Transmitted Pulse)
+2. Take the Complex Conjugate of the DFT of the zero padded pulse replica (not time reversed)
+3. Generate the Matched Filter directly in the frequency domain, using assumed Linear FM characteristics
+
+- In options 1 and 2, the replica has to be zero padded to the selected FFT length before the FFT is taken
+- Because the throwaway region is equal to the replica length (minus one), the FFT length should be a few times longer than the replica length to obtain
+  efficient processing
+
+Why?
+When you do convolution via FFT (fast convolution), you typically use overlap-save and overlap-add methods.
+In overlap-save: The beginning of each output block contains 'wrap around' garbage data from circular convolution
+                 That garbage data length = replica length - 1 (because convolution of an N-Point filter with an M-Point signal has N-1 invalid starting points)
+This means, if your FFT size is barely larger than your replica length, almost your whole block gets thrown out!
+Larger FFT blocks = More usable samples per FFT = Higher Efficiency
+
+- The location of the filter throwaway region is different in each design
+- If zero padding is done at the end of the replica array, the circular convolution throwaway region is at the
+--- Start of the IDFT output array for Option 1
+--- End of the IDFT output array for Option 2
+- It's convenient if the throwaway is at the end of the array which is why Option 2 is sometimes preferred
+- In Option 3, the throwaway region is split between the two ends of the IDFT output array
+
+Option 2: Matched Filter Implementation
+
