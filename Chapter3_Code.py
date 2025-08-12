@@ -34,11 +34,11 @@ rx[delay : delay + len(tx)] = tx
 # Add a second target, see how close we can get with two distinct spikes in the returned convolution of our signal
 # Notice how the spikes model a sinc function. This is awesome because that spike is essentially our returned target resolution.
 # Our resolution is then how close we can make these spikes without them overlapping.
-# tx_index = 0
-# second_target_delay = 310 # We can get our second target response echo to start as close as 10 samples away and still differentiate the peaks!
-# for i in range(second_target_delay, second_target_delay + len(tx)):
-#     rx[i] = rx[i] + tx[tx_index]
-#     tx_index += 1
+tx_index = 0
+second_target_delay = 310 # We can get our second target response echo to start as close as 10 samples away and still differentiate the peaks!
+for i in range(second_target_delay, second_target_delay + len(tx)):
+    rx[i] = rx[i] + tx[tx_index]
+    tx_index += 1
 
 # Since we can detect targets as little as 10 samples away from each other in delay
 # This corresponds to a range resolution of (1 / 5000) * 10 = 0.002 seconds in range delay
